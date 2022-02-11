@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 
 
 class AfewDataset(Dataset):
-    def __init__(self, args, mode, list, transform=None):
+    def __init__(self, args, mode, val_list, transform=None):
         self.img_path_train = []
         self.img_path_eval = []
         self.valence_train = []
@@ -14,7 +14,7 @@ class AfewDataset(Dataset):
         self.arousal_eval = []
         self.args = args
         self.mode = mode
-        self.list = list
+        self.list = val_list
         self.transform = transform
         img_num = 30051
 

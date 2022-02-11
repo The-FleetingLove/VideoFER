@@ -7,31 +7,33 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import transforms
+import numpy as np
 
 from DataClass import AfewDataset
 from Model import Res18Feature
 from utils import pcc_ccc_func, RMSE_func
 
 
+# '/media/dell/新加卷1/2022本科毕业论文/XS/VideoFER/model/res18_naive.pth.tar'
 def parse_args():  # 解析参数定义
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--annotation_csv', type=str, default='/media/dell/新加卷1/2022本科毕业论文/XS/VideoFER/process_data/annotation.csv', help='img and v-a csv')
-    # parser.add_argument('--pretrained', type=str, default='/media/dell/新加卷1/2022本科毕业论文/XS/VideoFER/model/res18_naive.pth.tar', help='Pretrained weights')
-    parser.add_argument('--annotation_csv', type=str, default='D:/PyCharm/VideoFER/process_data/annotation.csv',
+    # parser.add_argument('--annotation_csv', type=str, default='/media/dell/新加卷1/2022本科毕业论文/XS/VideoFER/AFEW_data/annotation.csv', help='img and v-a csv')
+    parser.add_argument('--pretrained', type=str, default=None, help='Pretrained weights')
+    parser.add_argument('--annotation_csv', type=str, default='D:/FER/VideoFER/AFEW_data/annotation.csv',
                         help='img and v-a csv')
-    parser.add_argument('--pretrained', type=str, default='D:/PyCharm/VideoFER/model/res18_naive.pth.tar',
-                        help='Pretrained weights')
+    # parser.add_argument('--pretrained', type=str, default='D:/PyCharm/VideoFER/model/res18_naive.pth.tar',
+    #                     help='Pretrained weights')
     parser.add_argument('--batch_size', type=int, default=128, help='Batch size.')
     parser.add_argument('--optimizer', type=str, default="sgd", help='Optimizer, adam or sgd.')
     parser.add_argument('--lr', type=float, default=0.001, help='Initial learning rate for sgd.')
     parser.add_argument('--momentum', default=0.9, type=float, help='Momentum for sgd')
     parser.add_argument('--drop_rate', type=float, default=0.4, help='Drop out rate.')
-    parser.add_argument('--workers', default=0, type=int, help='Number of data loading workers (default: 4)')
+    parser.add_argument('--workers', default=4, type=int, help='Number of data loading workers (default: 4)')
     parser.add_argument('--epochs', type=int, default=40, help='Total training epochs.')
     return parser.parse_args()
 
 
-def train(args, list):
+def train(args, val_list):
     img_size = 128  # resize to img_size
     imagenet_pretrained = True
     model = Res18Feature(pretrained=imagenet_pretrained, drop_rate=args.drop_rate)  # 模型初始实例化
@@ -67,7 +69,7 @@ def train(args, list):
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225]),
         transforms.RandomErasing(scale=(0.02, 0.25))])
-    train_dataset = AfewDataset(args=args, mode='train', list=list, transform=data_transforms_train)
+    train_dataset = AfewDataset(args=args, mode='train', val_list=val_list, transform=data_transforms_train)
     print('Train dataset size is:', train_dataset.__len__())
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.workers, shuffle=True, pin_memory=True)
 
@@ -78,9 +80,9 @@ def train(args, list):
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])])
-    eval_dataset = AfewDataset(args=args, mode='eval', list=list, transform=data_transforms_val)
+    eval_dataset = AfewDataset(args=args, mode='eval', val_list=val_list, transform=data_transforms_val)
     print('Validation dataset size is:', eval_dataset.__len__())
-    eval_loader = DataLoader(eval_dataset, batch_size=args.batch_size, num_workers=args.workers, shuffle=False, pin_memory=True)
+    eval_loader = DataLoader(eval_dataset, batch_size=args.batch_size / 8, num_workers=args.workers, shuffle=False, pin_memory=True)
 
     params = model.parameters()
     # 优化器选择
@@ -119,7 +121,7 @@ def train(args, list):
             images = images.cuda()
             outputs = model(images)  # 前向传播
             targets = targets.cuda()
-            PCC_loss, CCC_loss, PCC_v, PCC_a, CCC_v, CCC_a = pcc_ccc_func(targets, outputs)
+            PCC_loss, CCC_loss, PCC_v, PCC_a, CCC_v, CCC_a = pcc_ccc_func(targets.cpu(), outputs.cpu())
             RMSE = RMSE_func(MSE(outputs, targets))
             loss = RMSE + 0.5 * (PCC_loss + CCC_loss)  # 计算loss
             loss.backward()  # 反向传播
@@ -157,7 +159,7 @@ def train(args, list):
                 iter_cnt += 1
                 outputs = model(images.cuda())  # 前向传播
                 targets = targets.cuda()
-                PCC_loss, CCC_loss, PCC_v, PCC_a, CCC_v, CCC_a = pcc_ccc_func(targets, outputs)
+                PCC_loss, CCC_loss, PCC_v, PCC_a, CCC_v, CCC_a = pcc_ccc_func(targets.cpu(), outputs.cpu())
                 RMSE = RMSE_func(MSE(outputs, targets))
                 loss = RMSE + 0.5 * (PCC_loss + CCC_loss)
                 eval_loss_sum += loss
@@ -178,5 +180,5 @@ def train(args, list):
 
 if __name__ == "__main__":
     arg = parse_args()  # 解析参数
-    val_train_list = [1, 2]
+    val_train_list = np.random.choice(30051, size=9015, replace=False)
     train(arg, val_train_list)
