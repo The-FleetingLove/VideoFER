@@ -29,7 +29,7 @@ def parse_args():  # 解析参数定义
     parser.add_argument('--momentum', default=0.9, type=float, help='Momentum for sgd')
     parser.add_argument('--drop_rate', type=float, default=0.4, help='Drop out rate.')
     parser.add_argument('--workers', default=4, type=int, help='Number of data loading workers (default: 4)')
-    parser.add_argument('--epochs', type=int, default=40, help='Total training epochs.')
+    parser.add_argument('--epochs', type=int, default=10, help='Total training epochs.')
     return parser.parse_args()
 
 
@@ -82,7 +82,7 @@ def train(args, val_list):
                              std=[0.229, 0.224, 0.225])])
     eval_dataset = AfewDataset(args=args, mode='eval', val_list=val_list, transform=data_transforms_val)
     print('Validation dataset size is:', eval_dataset.__len__())
-    eval_loader = DataLoader(eval_dataset, batch_size=args.batch_size / 8, num_workers=args.workers, shuffle=False, pin_memory=True)
+    eval_loader = DataLoader(eval_dataset, batch_size=args.batch_size, num_workers=args.workers, shuffle=False, pin_memory=True)
 
     params = model.parameters()
     # 优化器选择
