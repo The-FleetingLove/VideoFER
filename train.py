@@ -2,7 +2,7 @@
 # @author XS
 
 import argparse
-
+import wandb
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -37,6 +37,7 @@ def train(args, val_list):
     img_size = 128  # resize to img_size
     imagenet_pretrained = True
     model = Res18Feature(pretrained=imagenet_pretrained, drop_rate=args.drop_rate)  # 模型初始实例化
+    wandb.init(project="AFEW-VA project")
 
     if args.pretrained:
         print("Loading pretrained weights...", args.pretrained)
@@ -132,6 +133,7 @@ def train(args, val_list):
             PCC_a_sum += PCC_a
             CCC_v_sum += CCC_v
             CCC_a_sum += CCC_a
+            wandb.log({"epoch": epoch, "Loss": loss, "RMSE": RMSE, "PCC_v": PCC_v, "PCC_a": PCC_a, "CCC_v": CCC_v, "CCC_a": CCC_a})
             # print('(%d iter)\tLoss: %.3f\tRMSE: %.3f\tPCC_V: %.3f\tPCC_A: %.3f\tCCC_V: %.3f\tCCC_A: %.3f' % (
             #     iter_cnt, loss, RMSE, PCC_v, PCC_a, CCC_v, CCC_a))
         print(str(epoch) + " epoch learning rate is:" + str(optimizer.param_groups[0]['lr']))  # 显示学习率
