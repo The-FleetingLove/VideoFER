@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 import numpy as np
 
+from tqdm import tqdm
 from DataClass import AfewDataset
 from Model import Res18Feature
 from utils import pcc_ccc_func, RMSE_func
@@ -116,7 +117,7 @@ def train(args, val_list):
         CCC_a_sum = 0.0
         iter_cnt = 0
         model.train()
-        for batch_size, (images, targets, _) in enumerate(train_loader):
+        for batch_size, (images, targets, _) in enumerate(tqdm(train_loader)):
             iter_cnt += 1
             optimizer.zero_grad()  # 梯度初始化
             images = images.cuda()
@@ -157,7 +158,7 @@ def train(args, val_list):
             CCC_a_sum = 0.0
             iter_cnt = 0
             model.eval()
-            for batch_size, (images, targets, _) in enumerate(eval_loader):
+            for batch_size, (images, targets, _) in enumerate(tqdm(eval_loader)):
                 iter_cnt += 1
                 outputs = model(images.cuda())  # 前向传播
                 targets = targets.cuda()
