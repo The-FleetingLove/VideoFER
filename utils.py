@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 
 def pcc_ccc_func(labels_th, scores_th):
@@ -23,3 +24,20 @@ def pcc_ccc_func(labels_th, scores_th):
 
 def RMSE_func(mse_value):
     return torch.sqrt(mse_value)
+
+
+def CCC_score(x, y):
+    vx = x - np.mean(x)
+    vy = y - np.mean(y)
+    rho = np.sum(vx * vy) / (np.sqrt(np.sum(vx ** 2)) * np.sqrt(np.sum(vy ** 2)))
+    x_m = np.mean(x)
+    y_m = np.mean(y)
+    x_s = np.std(x)
+    y_s = np.std(y)
+    ccc = 2 * rho * x_s * y_s / (x_s ** 2 + y_s ** 2 + (x_m - y_m) ** 2)
+    return ccc
+
+
+def VA_metric(x, y):
+    items = [CCC_score(x[:, 0], y[:, 0]), CCC_score(x[:, 1], y[:, 1])]
+    return items
