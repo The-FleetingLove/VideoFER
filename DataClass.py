@@ -57,3 +57,30 @@ class AfewDataset(Dataset):
             image = self.transform(image)
 
         return image, np.array([valence, arousal], dtype=np.float32), item
+
+
+class AffDataset(Dataset):
+    def __init__(self, txt_path, mode, transform=None):
+        self.annotation_path = txt_path
+        self.mode = mode
+        self.transform = transform
+        data = pd.read_csv(self.annotation_path)
+        self.img_path_list = data.iloc[:, 0].values  # <class 'numpy.ndarray'>
+        self.valence_list = data.iloc[:, 1].values  # <class 'numpy.ndarray'>
+        self.arousal_list = data.iloc[:, 2].values  # <class 'numpy.ndarray'>
+
+    def __len__(self):
+        return len(self.img_path_list)
+
+    def __getitem__(self, item):
+        path = self.img_path_list[item]
+        valence = self.valence_list[item]  # <class 'numpy.int64'>
+        arousal = self.arousal_list[item]
+        image = cv2.imread(path)
+        # image = image[:, :, ::-1]  # BGR to RGB
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        if self.transform is not None:
+            image = self.transform(image)
+
+        return image, np.array([valence, arousal], dtype=np.float32)
